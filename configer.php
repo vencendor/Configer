@@ -5,13 +5,30 @@ class Configer {
 	var $file_name="";
 	var $date=array();
 	var $atribute;
+	var $optForSelect = 4;
+	var $booleanValues = array("0",0,"false",false,"1",1,"true",true);
 	
 	public function getAtributes() {
 		$conf_str=file_get_contents($this->file_name);
 		foreach($this->date as $n=>$cf) {
-			if(preg_match("#".$n."[^\r\n]*//([^\n\r]+)[\n\r]#",$conf_str,$m))
+			if(preg_match("#".$n."[^\r\n]*//([^\n\r]+)[\n\r]#",$conf_str,$m)) {
 				$this->atribute[$n]=trim($m[1]);
+			}
+			if(is_array($cf)) {
+				//var_dump($cf);
+				foreach($cf as $ns => $vs) {
+					//echo "#".$n.".*".$ns."[^\r\n]*//([^\n\r]+)[\n\r]#";
+					if(preg_match("#".$n.".*".$ns."[^\r\n]*=>[^\r\n]*//([^\n\r]+)[\n\r]#isU",$conf_str,$m)){
+						$this->atribute[$n."-".$ns]=trim($m[1]);
+					}
+				}
+			}
 		}
+	}
+	
+	public function readAtributes(){
+		$atr = array();
+
 	}
 	
 	public function safe(){
@@ -25,6 +42,98 @@ class Configer {
 
 		file_put_contents($this->file_name,"<? \n return ".$conf_str." \n ?>");
 
+	}
+	
+	public function renderInput( $title, $name_parent, $name_var=false, $data_var=false, $options=false ){
+		$inputStr = "";
+		
+		var_dump( $options ); 
+		
+		if(!$options or !in_array($data_var, $options['data'])) {
+			$inputStr = "<span> ".$title." </span><input type='text' name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  value='".$data_var."' />";
+		} else {
+			if($options['type']==="checkbox" ) {
+				if(in_array( $data_var, $this->booleanValues)) {
+					$inputStr = "<input type='checkbox' ".($data_var?"checked='checked'":"")." name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  /> <span> ".$title." </span>";
+				} else {
+					$inputStr = "<span> ".$title." </span><input type='text' name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  value='".$data_var."' />";
+				}
+			}
+			if($options['type']==="radio"){
+				foreach($options['data'] as $n=>$v){
+					$inputStr .= "<input type='radio' value='".$v."' ".($data_var===$v?"checked='checked'":"")." name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  /> <span> ".( isset($options['labels'][$n])?$options['labels'][$n]:$v )." </span>";
+				}
+				$inputStr = "<span> ".$title." </span>".$inputStr;
+			}
+			if($options['type']==="select"){
+				foreach($options['data'] as $n=>$v){
+					$inputStr .= "<option value='".$v."' ".($data_var===$v?"selected='selected'":"")." >  ".( isset($options['labels'][$n])?$options['labels'][$n]:$v )." </option> ";
+				}
+				$inputStr = "<span> ".$title." </span> <select name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."' > ".$inputStr."</select>";
+			}
+		}
+		
+		return $inputStr;
+	}
+	
+	public function parseAtribute($atribute){
+		$flags = array();
+		
+		
+		$flags['title'] = $atribute;
+		
+		if (strpos($atribute, "[static]") !== false) {
+			$flags['static'] = true;
+		} else {
+			$flags['static'] = false;
+		}
+		
+		if (strpos($atribute, "[dinamic]") !== false) {
+			$flags['dinamic'] = true;
+		} else {
+			$flags['dinamic'] = false;
+		}
+		
+		if (strpos($atribute, "[options") !== false) {
+			preg_match("#\[options\|(.+)+\]#",$atribute,$options);
+
+			$options  = explode ("|", $options[1]);
+
+			if(sizeof($options)==2){
+				$checkbox = true;
+				foreach($options as $od){
+					if(!in_array($od, $this->booleanValues, true) ){
+						$checkbox = false;
+					}
+				}
+				if($checkbox){
+					$flags['options']['type']="checkbox";
+				} else {
+					$flags['options']['type']="radio";
+				}
+			} elseif(sizeof($options) < $this->optForSelect) {
+				$flags['options']['type']="radio";
+			} else {
+				$flags['options']['type']="select";
+			}
+			
+			$flags['options']['data'] = $options;
+			
+			foreach($options as $n=>$v){
+				if(preg_match("#(.*)\((.*)\)#",$v,$m)) {
+					$flags['options']['data'][$n] = trim($m[1]);
+					$flags['options']['labels'][$n] = $m[2];
+				}
+			}
+
+			
+		} else {
+			$flags['options'] = false;
+		}
+		
+		$flags['title'] = trim(preg_replace("#\[[^\[\]]*\]#", "", $flags['title']));
+		
+		return $flags;
 	}
 	
 	public function __construct($file_name){
@@ -65,62 +174,84 @@ class Configer {
 		
 <style>
 	#configForm span{display:inline-block; width:150px; }
-	
 </style>
+<script>
+if(!window.jQuery){
+
+document.write(unescape('<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js">%3C/script%3E'));
+
+}
+
+</script>
+
+
 <script>	
+
 function addOption(t,name){
 
 	var optList=$(t.parentNode).find('div');
 	var opt=parseInt($(optList[optList.length-1]).find('span').html());
 	
-	$("<div><span> "+(opt+1)+" </span> <input type='text' name='config["+name+"]["+(opt+1)+"]'  value='' /> <a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' ></a></div>").insertBefore(t);
+	$("<div><span> "+(opt+1)+" </span> <input type='text' name='config["+name+"]["+(opt+1)+"]'  value='' /><a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' >Del</a></div>").insertBefore(t);
 
 }
 function removeOption(t){
 	$(t.parentNode).find('input').attr('value','');
-	$(t.parentNode).css('display','none');
+	$(t.parentNode).remove();
 }
 </script>
 
-<h1>Настройки</h1>
-
 <form class="form" id='configForm' method='post'>
 <? 
-foreach($this->atribute as $n=>$m) {
-	
-	if(is_array($this->date[$n])) {
-		echo ("<fieldset><legend>".$m."</legend>");
 
-		foreach($this->date[$n] as $nc=>$vc){
-			
-			if (strpos($m, "[static]") !== false) {
-				$m = str_replace("[static]", "", $m);
-				$static = true;
-			} else {
-				$static = false;
-			}
+var_dump( $this->atribute );
 
-			echo "<div ><span > ".$nc." </span> <input type='text' name='config[".$n."][".$nc."]'  value='".$vc."' />";
-			if(!$static) {
-				echo "<a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' > del </a>";
+
+foreach( $this->date as $n => $d_val ) {
+	if( isset($this->atribute[$n]) ) {
+		
+		$flags['dinamic'] = false;
+		$flags = $this->parseAtribute($this->atribute[$n]);
+		
+		if(is_array($d_val)) {
+			echo ("<fieldset><legend>".$flags['title']."</legend>");
+
+			foreach($d_val as $nc=>$vc){
+				
+				if( isset($this->atribute[$n."-".$nc]) ) { 
+					$flags = $this->parseAtribute($this->atribute[$n."-".$nc]);
+				} 
+				
+				echo "<div>".$this->renderInput((isset($this->atribute[$n."-".$nc])?$flags['title']:$nc), $n, $nc, $vc, $flags['options'] );
+
+				//echo "<div ><span > ".(isset($this->atribute[$n."-".$nc])?$flags['title']:$nc)." </span> <input type='text' name='config[".$n."][".$nc."]'  value='".$vc."' />";
+				
+				echo "dinamic ";
+				var_dump($flags['dinamic'], $flags['static']);
+				
+				if($flags['dinamic'] and !$flags['static']) {
+					echo "<a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' >Del</a>";
+				}
+				echo "</div>";
+				
+				if($flags['dinamic']){
+					$flags['static']=false;
+				}
 			}
+			if($flags['dinamic'] and !$flags['static']) {
+				echo "<a class='icon-plus' href='javascript:void(0)' onclick='addOption(this,\"".$n."\")' >Add</a>";
+			}
+			echo "</fieldset>";
+		} else {
+			echo "<div>";
+			echo $this->renderInput($flags['title'], $n, false, $d_val, $flags['options'] );
 			echo "</div>";
 		}
-		if(!$static) {
-			echo "<a class='icon-plus' href='javascript:void(0)' onclick='addOption(this,\"".$n."\")' > Добавить опцию</a>";
-		}
-		echo "</fieldset>";
-	} else {
-	echo "<div><span> ".$m." </span> <input type='text' name='config[".$n."]'  value='".$this->date[$n]."' />";
-	if(!$static) {
-		echo "<a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' > del </a>";
-	}
-	echo "</div>";
-	}
+}
 }
 
 ?>
-<input type='submit' class='btn btn-info' value='Сохранить' />
+<input type='submit' class='btn btn-info' value='Save' />
 
 </form><!-- form -->
 		
