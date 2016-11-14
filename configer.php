@@ -36,8 +36,13 @@ class Configer {
 		$conf_str=var_export($this->date,true);
 
 		//$atr=$model->getAtribute();
-		foreach($this->atribute as $n=>$v) {
-			$conf_str=preg_replace("#([^\n\r]*".$n."[^\n\r]*)[\n\r]#is","\\1//".$v."\n",$conf_str);
+		foreach($this->date as $n=>$v) {
+			if(isset($this->atribute[$n])) {
+				$conf_str = preg_replace("#([^\n\r]*".$n."[^\n\r]*)[\n\r]#is","\\1//".$this->atribute[$n]."\n",$conf_str);
+			}
+			foreach($v as $ns => $vs){
+				$conf_str = preg_match("#([^\n\r]*".$n.".*".$ns."[^\r\n]*=>[^\r\n]*)[\n\r]#isU","\\1//".$this->atribute[$n][$ns]."\n",$conf_str);
+			}
 		}
 
 		file_put_contents($this->file_name,"<? \n return ".$conf_str." \n ?>");
@@ -47,7 +52,7 @@ class Configer {
 	public function renderInput( $title, $name_parent, $name_var=false, $data_var=false, $options=false ){
 		$inputStr = "";
 		
-		var_dump( $options ); 
+		// var_dump( $options ); 
 		
 		if(!$options or !in_array($data_var, $options['data'])) {
 			$inputStr = "<span> ".$title." </span><input type='text' name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  value='".$data_var."' />";
@@ -90,9 +95,7 @@ class Configer {
 		
 		if (strpos($atribute, "[dinamic]") !== false) {
 			$flags['dinamic'] = true;
-		} else {
-			$flags['dinamic'] = false;
-		}
+		} 
 		
 		if (strpos($atribute, "[options") !== false) {
 			preg_match("#\[options\|(.+)+\]#",$atribute,$options);
@@ -133,6 +136,8 @@ class Configer {
 		
 		$flags['title'] = trim(preg_replace("#\[[^\[\]]*\]#", "", $flags['title']));
 		
+		//var_dump( $flags['title'] );
+		
 		return $flags;
 	}
 	
@@ -172,9 +177,6 @@ class Configer {
 
 	function showForm(){ ?>
 		
-<style>
-	#configForm span{display:inline-block; width:150px; }
-</style>
 <script>
 if(!window.jQuery){
 
@@ -192,7 +194,7 @@ function addOption(t,name){
 	var optList=$(t.parentNode).find('div');
 	var opt=parseInt($(optList[optList.length-1]).find('span').html());
 	
-	$("<div><span> "+(opt+1)+" </span> <input type='text' name='config["+name+"]["+(opt+1)+"]'  value='' /><a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' >Del</a></div>").insertBefore(t);
+	$("<div><span> "+(opt+1)+" </span><input type='text' name='config["+name+"]["+(opt+1)+"]'  value='' /><a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' >Del</a></div>").insertBefore(t);
 
 }
 function removeOption(t){
@@ -204,7 +206,7 @@ function removeOption(t){
 <form class="form" id='configForm' method='post'>
 <? 
 
-var_dump( $this->atribute );
+//var_dump( $this->atribute );
 
 
 foreach( $this->date as $n => $d_val ) {
@@ -213,32 +215,42 @@ foreach( $this->date as $n => $d_val ) {
 		$flags['dinamic'] = false;
 		$flags = $this->parseAtribute($this->atribute[$n]);
 		
+		/*
+		echo "dinamic1 ";
+		
+		var_dump($flags['dinamic'], $flags['static']);
+		*/
+		
 		if(is_array($d_val)) {
 			echo ("<fieldset><legend>".$flags['title']."</legend>");
 
 			foreach($d_val as $nc=>$vc){
 				
 				if( isset($this->atribute[$n."-".$nc]) ) { 
-					$flags = $this->parseAtribute($this->atribute[$n."-".$nc]);
-				} 
+					$flags = array_merge( $flags, $this->parseAtribute($this->atribute[$n."-".$nc]) ) ;
+				} else {
+					$flags['title']=$nc;
+				}
 				
-				echo "<div>".$this->renderInput((isset($this->atribute[$n."-".$nc])?$flags['title']:$nc), $n, $nc, $vc, $flags['options'] );
+				echo "<div>".$this->renderInput($flags['title'], $n, $nc, $vc, $flags['options'] );
 
 				//echo "<div ><span > ".(isset($this->atribute[$n."-".$nc])?$flags['title']:$nc)." </span> <input type='text' name='config[".$n."][".$nc."]'  value='".$vc."' />";
 				
+				/*
 				echo "dinamic ";
 				var_dump($flags['dinamic'], $flags['static']);
+				*/
 				
-				if($flags['dinamic'] and !$flags['static']) {
+				if(isset($flags['dinamic']) and $flags['dinamic'] and !$flags['static']) {
 					echo "<a class='icon-remove' href='javascript:void(0)' onclick='removeOption(this)' >Del</a>";
 				}
 				echo "</div>";
 				
-				if($flags['dinamic']){
+				if(isset($flags['dinamic']) and $flags['dinamic']){
 					$flags['static']=false;
 				}
 			}
-			if($flags['dinamic'] and !$flags['static']) {
+			if(isset($flags['dinamic']) and $flags['dinamic'] and !$flags['static']) {
 				echo "<a class='icon-plus' href='javascript:void(0)' onclick='addOption(this,\"".$n."\")' >Add</a>";
 			}
 			echo "</fieldset>";

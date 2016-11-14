@@ -1,21 +1,32 @@
 <? 
  return array (
-  'installed' => 'yes', // Установлено ли соединение [options|yes|no]
-  'created' => "0", //Создано ли улучшение [options|true|0]
-  'pers_data' => // Персональные данные
+  'installed' => 'yes',
+  'meta' => //Meta dates for page [static]
   array (
-    'name' => 'Иван Иванович', // Введите свое имя
-    'country' => '3', // Выберите страну проживания [options|0(RU)|1(BY)|2(UA)|3(KZ)]
-	'sex' => "m" // Выберите пол [options|m(мужской)|j(женский)]
+    'title' => 'Configer title', // Title for main page
+    'description' => 'Configer description', // Description for main page
   ),
-  'security_protocol' => 1, // Использовать защищеную связь [options|true|false]
-  'news_page' => 20, // Сколько новостей выводить на странице
-  'points' => // Времянные точки [dinamic]
-  array(
-	0 => 0.23, // Основная [static]
-	1 => 0.4,
-	2 => 0.67,
-  )
-
+  'adv_on_page' => '10',//���������� ���������� �� ��������
+  'currency' => //������
+  array (
+    0 => 'USD',
+    1 => 'RUB',
+    2 => 'EURO',
+  ),
+  'exchange' => //����� �����
+  array (
+    0 => '1',
+    1 => '56.58',
+    2 => '0.91',
+  ),
+  'no_price_cats' => //��������� ��� ���� "����"
+  array (
+    0 => '3',
+  ),
+  'no_type_cats' => //��������� ��� �������� (�����/�����������)
+  array (
+    0 => '4',
+  ),
+  'adminEmail' => 'wzcc@mail.ru',
 ) 
  ?>
