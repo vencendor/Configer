@@ -26,26 +26,33 @@ class Configer {
 		}
 	}
 	
-	public function readAtributes(){
-		$atr = array();
-
-	}
-	
 	public function safe(){
 					
-		$conf_str=var_export($this->date,true);
+		$conf_str=var_export( $this->date, true );
 
 		//$atr=$model->getAtribute();
 		foreach($this->date as $n=>$v) {
 			if(isset($this->atribute[$n])) {
 				$conf_str = preg_replace("#([^\n\r]*".$n."[^\n\r]*)[\n\r]#is","\\1//".$this->atribute[$n]."\n",$conf_str);
 			}
-			foreach($v as $ns => $vs){
-				$conf_str = preg_match("#([^\n\r]*".$n.".*".$ns."[^\r\n]*=>[^\r\n]*)[\n\r]#isU","\\1//".$this->atribute[$n][$ns]."\n",$conf_str);
+			
+			
+			
+			if( is_array($v) ) {
+				foreach( $v as $ns => $vs ){
+					//echo "#([^\n\r]*".$n.".*".$ns."[^\r\n]*=>[^\r\n]*)[\n\r]#isU";
+					//var_dump( $vs );
+					if( isset($this->atribute[$n."-".$ns]) ) {
+						$conf_str = preg_replace("#([^\n\r]*".$n.".*".$ns."[^\r\n]*=>[^\r\n]*)[\n\r]#isU","\\1//".$this->atribute[$n."-".$ns]."\n",$conf_str);
+					}
+				}
 			}
+			
+			// echo $conf_str."<br/><br/>";
+			
 		}
 
-		file_put_contents($this->file_name,"<? \n return ".$conf_str." \n ?>");
+		file_put_contents( $this->file_name, "<? \n return ".$conf_str." \n ?>" );
 
 	}
 	
@@ -54,19 +61,21 @@ class Configer {
 		
 		// var_dump( $options ); 
 		
+		$input_name = "config[".$name_parent."]".($name_var!==false?"[".$name_var."]":"");
+		
 		if(!$options or !in_array($data_var, $options['data'])) {
-			$inputStr = "<span> ".$title." </span><input type='text' name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  value='".$data_var."' />";
+			$inputStr = "<span> ".$title." </span><input type='text' name='".$input_name."'  value='".$data_var."' />";
 		} else {
 			if($options['type']==="checkbox" ) {
 				if(in_array( $data_var, $this->booleanValues)) {
-					$inputStr = "<input type='checkbox' ".($data_var?"checked='checked'":"")." name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  /> <span> ".$title." </span>";
+					$inputStr = "<input type='checkbox' ".($data_var?"checked='checked'":"")." name='".$input_name."'  /> <span> ".$title." </span>";
 				} else {
-					$inputStr = "<span> ".$title." </span><input type='text' name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  value='".$data_var."' />";
+					$inputStr = "<span> ".$title." </span><input type='text' name='".$input_name."'  value='".$data_var."' />";
 				}
 			}
 			if($options['type']==="radio"){
 				foreach($options['data'] as $n=>$v){
-					$inputStr .= "<input type='radio' value='".$v."' ".($data_var===$v?"checked='checked'":"")." name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."'  /> <span> ".( isset($options['labels'][$n])?$options['labels'][$n]:$v )." </span>";
+					$inputStr .= "<input type='radio' value='".$v."' ".( $data_var==$v?"checked='checked'":"" )." name='".$input_name."'  /> <span> ".( isset($options['labels'][$n])?$options['labels'][$n]:$v )." </span>";
 				}
 				$inputStr = "<span> ".$title." </span>".$inputStr;
 			}
@@ -74,7 +83,7 @@ class Configer {
 				foreach($options['data'] as $n=>$v){
 					$inputStr .= "<option value='".$v."' ".($data_var===$v?"selected='selected'":"")." >  ".( isset($options['labels'][$n])?$options['labels'][$n]:$v )." </option> ";
 				}
-				$inputStr = "<span> ".$title." </span> <select name='config[".$name_parent."]".($name_var?"[".$name_var."]":"")."' > ".$inputStr."</select>";
+				$inputStr = "<span> ".$title." </span> <select name='".$input_name."' > ".$inputStr."</select>";
 			}
 		}
 		
@@ -141,6 +150,28 @@ class Configer {
 		return $flags;
 	}
 	
+	public function checkboxFilter($atr, $val){
+		
+		echo $atr."  -<  ".$val." </br>";
+		
+		$ret = $val;
+		if(trim($val)==="" or trim($val)==="on"){
+			$opt = $this->parseAtribute( $atr );
+			
+			var_dump($opt);
+			
+			if( $opt['options']['type'] === "checkbox") {
+				if($val==="on")
+					$ret = 1;
+				else
+					$ret = 0;
+			}
+		}
+		return $ret;
+	}
+	
+	
+	
 	public function __construct($file_name){
 		if(!is_file($file_name))
 			return false;
@@ -152,21 +183,29 @@ class Configer {
 
 		if($_SERVER['REQUEST_METHOD']==="POST") {
 			
-			if(isset($_POST['config']))
-			{
+			if(isset($_POST['config'])){
 		
 				foreach($_POST['config'] as $n=>$v) {
-					if(is_array($v))
-					foreach($v as $n1=>$v1){
-						if(trim($v1)===""){
-							unset($_POST['config'][$n][$n1]);
+					
+					if(is_array($v)) {
+						foreach($v as $n1=>$v1){
+							if( isset($this->atribute[$n."-".$n1]) ) {
+								$_POST['config'][$n][$n1] = $this->checkboxFilter( $this->atribute[$n."-".$n1], $v1  );							
+							}
+							$this->date[$n][$n1]= $_POST['config'][$n][$n1]  ;
 						}
+					} else {
+						if( isset($this->atribute[$n]) ) {
+							$_POST['config'][$n]=$this->checkboxFilter( $this->atribute[$n], $v );
+						}
+						$this->date[$n]= $_POST['config'][$n]  ;
 					}
 					
-					//if(sizeof($this->date[$n])>=sizeof($_POST['config'][$n]))
-					$this->date[$n]=$_POST['config'][$n];
+					
 					
 				}
+				
+				//var_dump( $this->date);
 				
 				$this->safe();
 			}
@@ -213,7 +252,7 @@ foreach( $this->date as $n => $d_val ) {
 	if( isset($this->atribute[$n]) ) {
 		
 		$flags['dinamic'] = false;
-		$flags = $this->parseAtribute($this->atribute[$n]);
+		$flags = $this->parseAtribute( $this->atribute[$n] );
 		
 		/*
 		echo "dinamic1 ";

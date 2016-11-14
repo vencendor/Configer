@@ -1,32 +1,22 @@
 <? 
  return array (
-  'installed' => 'yes',
-  'meta' => //Meta dates for page [static]
+  'user' => //Personal date
   array (
-    'title' => 'Configer title', // Title for main page
-    'description' => 'Configer description', // Description for main page
+    'name' => 'Bill Smith',//Enter your name
+    'country' => '0',//Country [options|0(RU)|1(EN)|2(GB)]
   ),
-  'adv_on_page' => '10',//Количество объявлений на странице
-  'currency' => //Валюты
+  'system' => //Tehnical date
   array (
-    0 => 'USD',
-    1 => 'RUB',
-    2 => 'EURO',
+    'con_type' => 'mysql',//Type of mysql connection [options|mysql|mysqli]
+    'db_name' => '0',//Select db [options|0(Wordpress)|1(Joomla)|2(ModX)|3(OpenCart)]
+    'security' => 1,//Use security system [options|0|1]
   ),
-  'exchange' => //Курсы валют
+  'news_page' => '10',//РљРѕР»РёС‡РµСЃС‚РІРѕ РѕР±СЉСЏРІР»РµРЅРёР№ РЅР° СЃС‚СЂР°РЅРёС†Рµ
+  'timer' => //Р’СЂРµРјРµРЅС‹Рµ С‚РѕС‡РєРё [dinamic]
   array (
-    0 => '1',
+    0 => '1',//РїРµСЂРІР°СЏ С‚РѕС‡РєР° [static]
     1 => '56.58',
     2 => '0.91',
   ),
-  'no_price_cats' => //Категории без поля "цена"
-  array (
-    0 => '3',
-  ),
-  'no_type_cats' => //Категории без значения (спрос/предложение)
-  array (
-    0 => '4',
-  ),
-  'adminEmail' => 'wzcc@mail.ru',
 ) 
  ?>
