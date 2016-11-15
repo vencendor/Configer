@@ -3,10 +3,8 @@
 /**
  * Configer - PHP class for create form to comfortable edit php configuration files
  * options of displaying it's sipmle php comments after data 
- * @package PHPMailer
  * @link https://github.com/vencendor/configer The Configer GitHub project
  * @author Max Uglov <wzcc@mail.ru>
- * FITNESS FOR A PARTICULAR PURPOSE.
  */
 	
 
@@ -81,12 +79,10 @@ class Configer {
 	
 	// Display input for value 
 	public function renderInput( $title, $name_parent, $name_var=false, $data_var=false, $options=false ){
-		
-		
+
 		$inputStr = "";
 		$input_name = "config[".$name_parent."]".($name_var!==false?"[".$name_var."]":"");
-		
-		
+
 		// Simple text input 
 		if(!$options or !in_array($data_var, $options['data'])) {
 			$inputStr = "<span> ".$title." </span><input type='text' name='".$input_name."'  value='".$data_var."' />";
@@ -173,7 +169,7 @@ class Configer {
 			$flags['options']['data'] = $options;
 			
 			
-			// clear data
+			// parse labels for values and clear data
 			foreach($options as $n=>$v){
 				if(preg_match("#(.*)\((.*)\)#",$v,$m)) {
 					$flags['options']['data'][$n] = trim($m[1]);
