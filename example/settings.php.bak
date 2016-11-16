@@ -1,4 +1,4 @@
-<? 
+<?php
  return array (
   'user' => //Personal date
   array (
