@@ -9,7 +9,7 @@
 class Configer {
 
     public $file_name = "";
-    public $date = array(); // Data storage from file
+    public $data = array(); // Data storage from file
     public $atribute; // Atributes of display
     // Minimal numbers of elements for dispaly select input 
     public $optForSelect = 4;
@@ -20,7 +20,7 @@ class Configer {
     // Parse atributes of values from config file 
     public function getAtributes() {
         $conf_str = file_get_contents($this->file_name);
-        foreach ($this->date as $n => $cf) {
+        foreach ($this->data as $n => $cf) {
             // First level of array 
             if (preg_match("#" . $n . "[^\r\n]*//([^\n\r]+)[\n\r]#", $conf_str, $m)) {
                 $this->atribute[$n] = trim($m[1]);
@@ -52,10 +52,10 @@ class Configer {
     }
 
     // Write result to file 
-    public function safe() {
+    public function save() {
 
-        $conf_str = var_export($this->date, true);
-        foreach ($this->date as $n => $v) {
+        $conf_str = var_export($this->data, true);
+        foreach ($this->data as $n => $v) {
 
             // Insert back values atribute first level 
             if (isset($this->atribute[$n])) {
@@ -182,7 +182,7 @@ class Configer {
         return $flags;
     }
 
-    // boolean date for checkboxes converting
+    // boolean data for checkboxes converting
     public function checkboxFilter($atr, $val) {
         $ret = $val;
         if (trim($val) === "" or ! isset($val) or trim($val) === "on") {
@@ -212,7 +212,7 @@ class Configer {
 
         // read data
         $this->file_name = $file_name;
-        $this->date = require $this->file_name;
+        $this->data = require $this->file_name;
 
         $this->getAtributes();
 
@@ -228,7 +228,7 @@ class Configer {
             if (isset($_POST['config']) and is_array($_POST['config'])) {
 
 
-                //check date if its checkbox values for first and second level of values
+                //check data if its checkbox values for first and second level of values
                 foreach ($this->atribute as $n => $v) {
                     if (strpos($n, "~") !== false) {
                         $name = explode("~", $n);
@@ -248,9 +248,9 @@ class Configer {
                     }
                 }
 
-                $this->date = array_merge($this->date, $_POST['config']);
+                $this->data = array_merge($this->data, $_POST['config']);
 
-                $this->safe();
+                $this->save();
             }
         }
     }
@@ -280,7 +280,7 @@ class Configer {
         <form class="form" id='configForm' method='post'>
         <?php
 
-        foreach ($this->date as $n => $d_val) {
+        foreach ($this->data as $n => $d_val) {
             if (isset($this->atribute[$n])) {
 
                 $flags['dinamic'] = false;
