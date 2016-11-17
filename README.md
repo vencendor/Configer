@@ -1,5 +1,5 @@
 # Configer
-Php Class to make changes in yours configuration files with siple form redactor
+Php Class to make changes in yours configuration files with simple form redactor
 
 Using: 
 
@@ -24,7 +24,7 @@ Allowed keys in comments:
 
 [hidden]   -  hide level 2 values to default for curent element
 
-[dinamic]  -  alow add new elements
+[dinamic]  -  allow add new elements
 
 [static]  -   disallow delete element
 
